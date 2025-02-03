@@ -62,7 +62,7 @@ class GameState():
                     break
                 elif self.board[x][self.kingCol][0]==self.enemyColor:
                     break
-            for x in range(r+1,8):
+             x in range(r+1,8):
                 if self.board[x][c][0]=='b':
                     moves.append(Move((r,c),(x,c),self.board).getMoveID())
                     break
