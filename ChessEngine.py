@@ -29,6 +29,7 @@ class GameState():
 
         self.board[move.startRow][move.startCol]="--"
         self.board[move.endRow][move.endCol]=move.pieceMoved
+        move.prevFiftyMoveCounter=self.fiftyMoveCounter
 
         if self.enPassant[0]:  #Terminate EnPassant
             if move.moveType[0]=='EnPassant':
@@ -108,13 +109,13 @@ class GameState():
 
         self.moveLog.append(move)
 
-        if len(self.moveLog)>=9 and self.moveLog[-1]==self.moveLog[-5]==self.moveLog[-7]:
+        if len(self.moveLog)>=9 and self.moveLog[-1].getMoveID()==self.moveLog[-5].getMoveID()==self.moveLog[-7].getMoveID():
             for x in range(3):
                 if self.moveLog[-2-x].getMoveID()!=self.moveLog[-6-x].getMoveID():
                     break
             else:
                 self.draw=True
-                
+
         self.whiteToMove=not(self.whiteToMove)
 
 
@@ -124,6 +125,8 @@ class GameState():
         move=self.moveLog.pop()
 
         self.board[move.endRow][move.endCol],self.board[move.startRow][move.startCol]=move.pieceCaptured,move.pieceMoved
+
+        self.fiftyMoveCounter=move.prevFiftyMoveCounter
 
 
         if move.moveType[0]=='EnPassant':         #Reappear EnPassanted Piece
@@ -188,8 +191,6 @@ class GameState():
             if self.stalemate:
                 self.stalemate=False
 
-            elif self.fiftyMoveCounter==50:
-                self.fiftyMoveCounter-=1
             self.draw=False
 
         self.whiteToMove=not(self.whiteToMove)
@@ -759,6 +760,7 @@ class Move():
         self.pieceMoved=board[self.startRow][self.startCol]
         self.pieceCaptured=board[self.endRow][self.endCol]
         self.moveType=['Normal']
+        self.prevFiftyMoveCounter=0
 
     def getChessNotation(self):
         return self.getRankFile(self.startRow,self.startCol) + self.getRankFile(self.endRow,self.endCol)

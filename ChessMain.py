@@ -10,7 +10,7 @@ IMAGES={}
 
 def load_images():
 
-    pieces=["wp","wR","wN","wB","wQ","wK","bp","bR","bN","bB","bQ","bK",]
+    pieces=["wp","wR","wN","wB","wQ","wK","bp","bR","bN","bB","bQ","bK"]
     for piece in pieces:
         IMAGES[piece]=p.transform.scale(p.image.load("Piece_images/"+piece+".png"),(SQ_SIZE,SQ_SIZE))
 

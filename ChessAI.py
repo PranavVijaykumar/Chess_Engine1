@@ -126,7 +126,7 @@ def bestMove(gs):
 
     elif 300<rawBoardScore(gs)<420 and not(ROOKMOBILITY):
         DEPTH=5
-        MOBILITYFACTOR/=3
+        MOBILITYFACTOR/=2
         ROOKMOBILITY=True
 
     elif rawBoardScore(gs)<300 and DEPTH==5:
