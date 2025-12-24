@@ -8,6 +8,7 @@ MOBILITYFACTOR=0.5
 ATTACKFACTOR=1
 PROTECTFACTOR=0.8
 ROOKMOBILITY=False
+TT={}  #Transposition Table
 
 pieceScores = {'K':0, 'Q':90, 'R':50, 'B':30, 'N':30, 'p':10}
 
@@ -56,10 +57,10 @@ def kingSafetyScore(gs,r,c):
         if -1<x<8 and -1<y<8:
             if gs.board[x][y][0]==frndColor:
                 frndCount+=1
-            elif gs.willBeCheck(r,c):
+            elif gs.willBeCheck(x,y):
                 checkCount+=1
 
-    score+= -2 if frndCount<=1 else 0
+    score-= 2 if frndCount<=1 else 0
     score-= math.floor(16*10**(-4/checkCount))
     
     return score
@@ -69,7 +70,7 @@ def mobilityScore(gs,r,c):
     moveCount=0
     piecesProtected=0
     piecesAttacked=0
-    frndColor='w' if gs.board[r][c]=='w' else 'b'
+    frndColor='w' if gs.board[r][c][0]=='w' else 'b'
 
     if gs.board[r][c][1]=='B':
 
@@ -182,21 +183,25 @@ def RecursiveMinMax(gs,depth,validMoves,whiteToMove):
 
 
 
-def NegaMaxAlphaBeta(gs,depth,alpha,beta,turn):
+def NegaMaxAlphaBeta(gs,depth,alpha,beta,turn): #can add calculate till no captures exist
 
-    global nextMove
-    if depth==0:
+    global nextMove,TT 
+
+    Z = hash(str(gs.board)) ^ hash(gs.whiteToMove)
+
+    if Z in TT and TT[Z]["depth"] >= depth:
+        return TT[Z]["score"]
+    
+    if depth<1:
         return turn*scoreBoard(gs)
 
     validMoves=gs.getValidMoves()
+    validMoves.sort(key=lambda m: 1 if m.pieceCaptured != '--' else 0, reverse=True)
 
     if gs.checkmate:
         return -CHECKMATE+(DEPTH-depth)
     elif gs.draw:
         return DRAW
-    
-    if depth==DEPTH:
-        random.shuffle(validMoves)
 
     maxscore=-CHECKMATE
     for move in validMoves:
@@ -215,6 +220,8 @@ def NegaMaxAlphaBeta(gs,depth,alpha,beta,turn):
             alpha=max(alpha,maxscore)
             if alpha>=beta:
                 break
+    
+    TT[Z] = {"score": maxscore, "depth": depth}
 
     return maxscore
 
@@ -231,20 +238,6 @@ def scoreBoard(gs):
         return DRAW
     
     score=0
-    if gs.whiteToMove:
-        whiteValidMoves=gs.getValidMoves()
-        gs.makeMove(ChessEngine.Move((6,7),(6,7),gs.board))
-        blackValidMoves=gs.getValidMoves()
-    
-    else:
-        blackValidMoves=gs.getValidMoves()
-        gs.makeMove(ChessEngine.Move((1,7),(1,7),gs.board))
-        whiteValidMoves=gs.getValidMoves()
-    
-    gs.undoMove()
-
-    score+= (len(whiteValidMoves)-len(blackValidMoves))*MOBILITYFACTOR/2
-
     for r in range(8):
         for c in range(8):
 
