@@ -6,7 +6,7 @@ DRAW=0
 DEPTH=5
 MOBILITYFACTOR=0.5
 ATTACKFACTOR=1
-PROTECTFACTOR=0.9
+PROTECTFACTOR=0.8
 ROOKMOBILITY=False
 
 pieceScores = {'K':0, 'Q':90, 'R':50, 'B':30, 'N':30, 'p':10}
@@ -117,10 +117,10 @@ def bestMove(gs):
     global nextMove,DEPTH,ROOKMOBILITY,MOBILITYFACTOR,PROTECTFACTOR,ATTACKFACTOR
     nextMove=None
 
-    if len(gs.moveLog)== 6 if gs.whiteToMove else 7:
-        DEPTH=4
+    # if len(gs.moveLog) == 6 if gs.whiteToMove else 7:
+    #     DEPTH=4
 
-    if rawBoardScore(gs)<500 and PROTECTFACTOR==0.9:
+    if rawBoardScore(gs)<500 and PROTECTFACTOR==0.8:
         PROTECTFACTOR=1.2
         ATTACKFACTOR=0.9
 
