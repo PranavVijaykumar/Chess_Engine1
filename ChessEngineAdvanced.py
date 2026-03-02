@@ -5,6 +5,10 @@ random.seed(42)
 PIECES = ['wK','wQ','wR','wB','wN','wp',
           'bK','bQ','bR','bB','bN','bp']
 
+ROOK_DIR=[(1,0),(0,1),(-1,0),(0,-1)]
+BISHOP_DIR=[(1,1),(1,-1),(-1,1),(-1,-1)]
+KNIGHT_DIR=[(2,1),(-2,1),(2,-1),(-2,-1),(1,2),(-1,2),(1,-2),(-1,-2)]
+
 ZOBRIST = {}
 
 for piece in PIECES:
@@ -15,6 +19,21 @@ for piece in PIECES:
 SIDE_TO_MOVE = random.getrandbits(64)
 EN_PASSANT = random.getrandbits(64)
 CASTLING_RIGHTS={'wK':random.getrandbits(64),'bK':random.getrandbits(64),'wR0':random.getrandbits(64),'wR7':random.getrandbits(64),'bR0':random.getrandbits(64),'bR7':random.getrandbits(64)}
+
+
+def startingMoves(board,turn):
+    moveSet=[]
+    for c in range(8):
+        moveSet.append(Move((6 if turn else 1, c),(5 if turn else 2, c),board))
+        moveSet.append(Move((6 if turn else 1, c),(4 if turn else 3, c),board))
+    
+    moveSet.append(Move((7 if turn else 0, 1),(5 if turn else 2, 0),board))
+    moveSet.append(Move((7 if turn else 0, 1),(5 if turn else 2, 2),board))
+    moveSet.append(Move((7 if turn else 0, 6),(5 if turn else 2, 5),board))
+    moveSet.append(Move((7 if turn else 0, 6),(5 if turn else 2, 7),board))
+
+    return moveSet
+
 
 
 def zobristHash(gs):
@@ -29,8 +48,7 @@ def zobristHash(gs):
     for piece in CASTLING_RIGHTS:
         h^= CASTLING_RIGHTS[piece]
 
-    if gs.whiteToMove:
-        h ^= SIDE_TO_MOVE
+    h ^= SIDE_TO_MOVE
 
     return h
 
@@ -50,6 +68,8 @@ class GameState():
         ]
         self.moveLog=[]
         self.whiteToMove=True
+        self.whiteMoveSet=startingMoves(self.board,True)
+        self.blackMoveSet=startingMoves(self.board,False)
         self.whiteKingPos=(7,4)
         self.blackKingPos=(0,4)
         self.checkmate=False
@@ -61,6 +81,8 @@ class GameState():
         self.enPassant=(False,-1)
         self.zobrist=zobristHash(self)
         self.hashTable={self.zobrist:1}
+        self.pinnedPieces=[]
+        self.checks=[]
          
 
 
@@ -86,7 +108,6 @@ class GameState():
             self.zobrist^=EN_PASSANT
             self.enPassant=(False,-1)
         
-
         if move.pieceMoved=='wK':
             self.whiteKingPos=(move.endRow,move.endCol)
 
@@ -184,16 +205,201 @@ class GameState():
                 self.draw=True
         
 
+        self.updateMoveSet(move)
+
         self.moveLog.append(move)
         
+        self.whiteToMove=not(self.whiteToMove)
+
         if self.zobrist in self.hashTable:
             self.hashTable[self.zobrist]+=1
             if self.hashTable[self.zobrist]==3:
                 self.draw=True
+
         else:
+            if self.whiteToMove:
+                self.whiteMoveSet
             self.hashTable[self.zobrist]=1
 
-        self.whiteToMove=not(self.whiteToMove)
+
+
+    def updateMoveSet(self,move):
+
+        updatedWhiteMoveSet=[]
+        updatedBlackMoveSet=[]
+        deletedMoves={}
+        deletedBlackMoves=[]
+        deletedWhiteMoves=[]
+        startRow,startCol,endRow,endCol=move.startRow,move.startCol,move.endRow,move.endCol
+        frndColor=move.pieceMoved[0]
+
+        dr,dc=endRow-startRow,endCol-startCol
+        moveDir= ((dr>0)-(dr<0),(dc>0)-(dc<0)) if move.pieceMoved[1]!='N' else (2,1)
+        dirFlag=0
+
+        piecePinned=False
+        if move.pieceCaptured=='--':
+            for piece in self.pinnedPieces:
+                if piece[0]==(startRow,startCol):
+                    piecePinned=True
+                    pinDir=piece[1]
+                    break
+
+
+        for dir in KNIGHT_DIR:
+
+            if self.board[startRow+dir[0]][startCol+dir[1]][1]=='N':
+
+                addMove=Move((startRow+dir[0],startCol+dir[1]),(startRow,startCol),self.board)
+
+                if frndColor=='w':
+                        updatedWhiteMoveSet.append(addMove)
+                else:
+                    updatedBlackMoveSet.append(addMove)
+
+                if self.board[startRow+dir[0]][startCol+dir[1]][0]!=frndColor:
+                    deletedMoves[addMove.getMoveID()]=1
+        
+
+        for directions in (ROOK_DIR,BISHOP_DIR):
+
+            for dir in directions:
+                
+                if dir==moveDir:
+                    r,c=endRow+dir[0],endCol+dir[1]
+                else:
+                    r,c=startRow+dir[0],startCol+dir[1]
+
+                while -1<r<8 and -1<c<8:
+
+                    if self.board[r][c]!='--':
+
+                        if (not(dirFlag) and self.board[r][c][1] in ('R','Q')) or (dirFlag and self.board[r][c][1] in ('B','Q')):
+
+                            if dir==moveDir:
+                                x,y=startRow+moveDir[0],startCol+moveDir[1]
+
+                                while x!=endRow-moveDir[0] and y!=endCol-moveDir[1]:
+
+                                    deletedMoves[r*1000+c*100+x*10+y]=1
+                                    x+=moveDir[0]
+                                    y+=moveDir[1]
+
+                                if frndColor==self.board[r][c][0]:
+                                    deletedMoves[r*1000+c*100+endRow*10+endCol]=1
+
+                                else:
+                                    deletedMoves[r*1000+c*100+startRow*10+startCol]=1
+                                    deletedMoves[r*1000+c*100+endRow*10+endCol]=1
+                                    addMove=Move((r,c),(endRow,endCol),self.board)
+
+                                    if self.board[r][c][0]=='w':
+                                        updatedWhiteMoveSet.append(addMove)
+                                    else:
+                                        updatedBlackMoveSet.append(addMove)
+                            
+                            else:
+
+                                if frndColor!=self.board[r][c][0]:
+                                    deletedMoves[r*1000+c*100+startRow*10+startCol]=1
+
+                                x,y=startRow,startCol
+
+                                if self.board[r][c][0]=='w':
+
+                                    while -1<x<8 and -1<y<8:
+
+                                        if self.board[x][y]=='--':
+                                            updatedWhiteMoveSet.append(Move((r,c),(x,y),self.board))
+
+                                        elif self.board[x][y][0]=='b':
+                                            updatedWhiteMoveSet.append(Move((r,c),(x,y),self.board))
+
+                                            xp=x-dir[0]
+                                            yp=y-dir[1]
+
+                                            while -1<xp<8 and -1<yp<8:
+
+                                                if self.board[x][y]=='bK':
+                                                    self.pinnedPieces.append(((x,y),(r,c),dir))
+                                                    break
+
+                                                elif self.board[x][y]!='--':
+                                                    break
+
+                                                xp-=dir[0]
+                                                yp-=dir[1]
+                                        
+                                        else:
+                                            break
+
+                                        x-=dir[0]
+                                        y-=dir[1]
+            
+                                else:
+
+                                    while -1<x<8 and -1<y<8:
+
+                                        if self.board[x][y]=='--':
+                                            updatedBlackMoveSet.append(Move((r,c),(x,y),self.board))
+
+                                        elif self.board[x][y][0]=='b':
+                                            updatedBlackMoveSet.append(Move((r,c),(x,y),self.board))
+
+                                            xp=x-dir[0]
+                                            yp=y-dir[1]
+
+                                            while -1<xp<8 and -1<yp<8:
+
+                                                if self.board[x][y]=='wK':
+                                                    self.pinnedPieces.append(((x,y),(r,c),dir))
+                                                    break
+
+                                                elif self.board[x][y]!='--':
+                                                    break
+
+                                                xp-=dir[0]
+                                                yp-=dir[1]
+                                        
+                                        else:
+                                            break
+
+                                        x-=dir[0]
+                                        y-=dir[1]
+                                        
+                        break
+                        
+                    r+=dir[0]
+                    c+=dir[1]
+            
+            dirFlag+=1
+        
+
+        for dir in KNIGHT_DIR:
+
+            if self.board[endRow+dir[0]][endCol+dir[1]][1]=='N':
+
+                addMove=Move((startRow+dir[0],startCol+dir[1]),(startRow,startCol),self.board)
+                if frndColor=='w':
+                        updatedWhiteMoveSet.append(addMove)
+                else:
+                    updatedBlackMoveSet.append(addMove)
+
+                if self.board[startRow+dir[0]][startCol+dir[1]][0]!=frndColor:
+                    deletedMoves[addMove.getMoveID()]=1
+        
+
+        
+
+
+                        
+
+
+
+                
+
+
+
 
 
 
@@ -317,10 +523,10 @@ class GameState():
         self.whiteToMove=not(self.whiteToMove)
 
 
-
     def getValidMoves(self):
 
         if self.whiteToMove:
+            validMoves=self.whiteMoveSet
             self.kingRow=self.whiteKingPos[0]
             self.kingCol=self.whiteKingPos[1]
             self.frndColor='w'
