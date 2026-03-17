@@ -226,8 +226,8 @@ approaches (like ASP), especially for structured endgame reasoning.
 
 ## Contact
 
-Pranav Vijaykumar
-IIT Kharagpur - Electrical Engineering
-Summer Intern at Google (SDE)
-Interested in AI systems, optimization, and software development
+Pranav Vijaykumar\
+IIT Kharagpur - Electrical Engineering\
+Summer Intern at Google (SDE)\
+Interested in AI systems, optimization, and software development\
 Email: mindyourviews@gmail.com
