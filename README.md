@@ -28,9 +28,9 @@ You can already play against the engine using the Pygame interface.
 python ChessMain.py
 ```
 
--   You play as White by default\
--   The AI plays the other side\
--   Press `z` to undo moves\
+-   You play as White by default
+-   The AI plays the other side
+-   Press `z` to undo moves
 -   Press `r` to reset the game
 
 It's simple, but it works --- and yes, it will try to beat you.
@@ -44,12 +44,12 @@ modular and manageable.
 
 ### Game State Representation
 
--   The entire board is stored inside a `GameState` object\
+-   The entire board is stored inside a `GameState` object
 -   It tracks:
-    -   Board configuration\
-    -   Turn information\
-    -   King positions\
-    -   Castling rights and en passant\
+    -   Board configuration
+    -   Turn information
+    -   King positions
+    -   Castling rights and en passant
     -   Move history (for undo functionality)
 
 This makes it easy to simulate moves, backtrack, and explore game trees.
@@ -60,14 +60,14 @@ This makes it easy to simulate moves, backtrack, and explore game trees.
 
 Moves are represented using a dedicated `Move` object, which stores:
 
--   Start and end coordinates\
--   Piece moved and piece captured\
+-   Start and end coordinates
+-   Piece moved and piece captured
 -   Special move information (promotion, castling, en passant)
 
 This abstraction simplifies:
 
--   Move comparison\
--   Logging\
+-   Move comparison
+-   Logging
 -   Reversing moves
 
 ------------------------------------------------------------------------
@@ -92,13 +92,13 @@ This keeps move generation both correct and efficient.
 
 ## Search
 
--   Negamax with Alpha-Beta pruning\
--   Basic move ordering (captures first)\
+-   Negamax with Alpha-Beta pruning
+-   Basic move ordering (captures first)
 -   Quiescence search to avoid unstable positions
 
 The engine also uses:
 
--   Zobrist hashing\
+-   Zobrist hashing
 -   Transposition tables
 
 to avoid recomputing already-seen positions.
@@ -119,22 +119,22 @@ Each piece is assigned a base value.
 ### Piece Activity (Mobility)
 
 -   Sliding pieces (bishops, rooks, queens) are rewarded for having more
-    available moves\
+    available moves
 -   Also considers attacking and defending pieces
 
 ------------------------------------------------------------------------
 
 ### Positional Heuristics (Heatmaps)
 
--   Pawns and knights use piece-square tables\
+-   Pawns and knights use piece-square tables
 -   Encourages central control and better positioning
 
 ------------------------------------------------------------------------
 
 ### King Safety
 
--   Penalizes exposed kings\
--   Rewards castling and safer structures\
+-   Penalizes exposed kings
+-   Rewards castling and safer structures
 -   Considers nearby threats and defenders
 
 ------------------------------------------------------------------------
@@ -143,25 +143,25 @@ Each piece is assigned a base value.
 
 ### Incremental Move Generation
 
-Normally, engines do this after every move:\
+Normally, engines do this after every move:
 \> recompute all legal moves from scratch
 
-I'm trying a different approach:\
+I'm trying a different approach:
 \> update only the moves that are affected by the last move
 
 This involves maintaining:
 
--   Move sets for both sides\
--   Pinned pieces\
+-   Move sets for both sides
+-   Pinned pieces
 -   Checks and interactions dynamically
 
 ------------------------------------------------------------------------
 
 ### Why this is hard (and interesting)
 
--   Pins and checks are very sensitive to small changes\
--   Sliding pieces create long-range dependencies\
--   Undoing moves correctly becomes tricky\
+-   Pins and checks are very sensitive to small changes
+-   Sliding pieces create long-range dependencies
+-   Undoing moves correctly becomes tricky
 -   Easy to introduce subtle bugs
 
 ------------------------------------------------------------------------
@@ -177,9 +177,9 @@ Some observations from experimentation:
 -   **Zobrist hashing** significantly improved performance and move
     quality:
 
-    -   The engine avoids recalculating repeated positions\
+    -   The engine avoids recalculating repeated positions
     -   It started naturally recognizing common structures and playing
-        sensible opening moves\
+        sensible opening moves
     -   This happened even without any explicit opening database
 
 These optimizations made the engine noticeably stronger without changing
@@ -189,20 +189,20 @@ the core evaluation logic.
 
 ## Files
 
--   `ChessMain.py` → UI (Pygame, play the game here)\
--   `ChessEngine.py` → Standard move generation\
+-   `ChessMain.py` → UI (Pygame, play the game here)
+-   `ChessEngine.py` → Standard move generation
 -   `ChessEngineAdvanced.py` → Incremental move updates (work in
-    progress)\
+    progress)
 -   `ChessAI.py` → Search + evaluation
 
 ------------------------------------------------------------------------
 
 ## Where this is going
 
--   Compare incremental vs full recomputation\
--   Improve evaluation function\
--   Try bitboards for performance\
--   Add iterative deepening\
+-   Compare incremental vs full recomputation
+-   Improve evaluation function
+-   Try bitboards for performance
+-   Add iterative deepening
 -   Improve quiescence search
 
 ------------------------------------------------------------------------
@@ -213,8 +213,8 @@ This started as a learning project, but it turned into something more.
 
 Understanding how to:
 
--   Efficiently update state\
--   Avoid redundant computation\
+-   Efficiently update state
+-   Avoid redundant computation
 -   Structure a non-trivial system
 
 The incremental move generation part is something I'd like to explore
@@ -226,8 +226,8 @@ approaches (like ASP), especially for structured endgame reasoning.
 
 ## Contact
 
-Pranav Vijaykumar\
-IIT Kharagpur - Electrical Engineering\
-Summer Intern at Google (SDE)\
-Interested in AI systems, optimization, and software development\
+Pranav Vijaykumar
+IIT Kharagpur - Electrical Engineering
+Summer Intern at Google (SDE)
+Interested in AI systems, optimization, and software development
 Email: mindyourviews@gmail.com
